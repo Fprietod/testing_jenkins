@@ -7,14 +7,12 @@ pipeline {
     stages {
         stage('Checkout PR') {
             steps {
-                // Hacer checkout de la rama del PR del fork
                 checkout([$class: 'GitSCM', branches: [[name: env.CHANGE_BRANCH]],
-                          userRemoteConfigs: [[url: env.CHANGE_URL, credentialsId: 'tus_credenciales_id']]])
+                          userRemoteConfigs: [[url: env.CHANGE_URL, credentialsId: 'github-credentials-id']]])
             }
         }
         stage('SonarQube Analysis') {
             steps {
-                // Ejecutar el análisis de calidad del código SQL con SonarQube
                 withSonarQubeEnv('SonarQube Server') {
                     sh """
                     ${SONARQUBE_SCANNER_HOME}/bin/sonar-scanner \
@@ -29,10 +27,18 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    timeout(time: 1, unit: 'MINUTES') {
+                    timeout(time: 5, unit: 'MINUTES') {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
-                            error "La puerta de calidad no pasó: ${qg.status}"
+                            // Si la puerta de calidad no pasa, cerrar el PR
+                            withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                                sh """
+                                curl -X PATCH -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" \
+                                -d '{"state": "closed"}' \
+                                ${env.CHANGE_URL}/pulls/${env.CHANGE_ID}
+                                """
+                            }
+                            error "La puerta de calidad no pasó: ${qg.status}. El PR ha sido cerrado."
                         }
                     }
                 }
