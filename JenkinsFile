@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        ORIGINAL_REPO_URL = 'https://github.com/original_user/original_repo.git'
+        ORIGINAL_REPO_URL = 'https://github.com/Fprietod/testing_jenkins.git'
         SONARQUBE_SCANNER_HOME = tool 'SonarQube Scanner' // Nombre configurado del escáner en Global Tool Configuration
     }
     stages {
