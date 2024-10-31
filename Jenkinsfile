@@ -1,22 +1,23 @@
 pipeline {
     agent any
     environment {
-        ORIGINAL_REPO_URL = 'https://github.com/Fprietod/testing_jenkins.git'
+        CHANGE_URL = env.CHANGE_URL  // URL dinámica del fork
+        CHANGE_BRANCH = env.CHANGE_BRANCH  // Rama dinámica del fork
     }
     stages {
         stage('Checkout PR') {
             steps {
-                checkout([$class: 'GitSCM', branches: [[name: env.CHANGE_BRANCH]],
-                          userRemoteConfigs: [[url: env.CHANGE_URL, credentialsId: 'github-credentials-id']]])
+                checkout([$class: 'GitSCM',
+                          branches: [[name: env.CHANGE_BRANCH]],
+                          userRemoteConfigs: [[url: env.CHANGE_URL, credentialsId: 'github-credentials-id']]
+                ])
             }
         }
         stage('SQLFluff Analysis') {
             steps {
                 script {
-                    // Run SQLFluff linting on SQL files
-                    def lintResult = sh(script: 'sqlfluff lint **/*.sql --dialect your_sql_dialect --rules L001,L002,L003,L004', returnStatus: true)
+                    def lintResult = sh(script: 'sqlfluff lint **/*.sql --dialect tu_dialecto_sql --rules L001,L002,L003,L004', returnStatus: true)
                     if (lintResult != 0) {
-                        // Close PR if SQL quality check fails
                         withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                             sh """
                             curl -X PATCH -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" \
@@ -24,7 +25,7 @@ pipeline {
                             ${env.CHANGE_URL}/pulls/${env.CHANGE_ID}
                             """
                         }
-                        error "SQL quality check failed. PR closed."
+                        error "La validación de calidad no pasó. PR cerrado."
                     }
                 }
             }
@@ -45,10 +46,10 @@ pipeline {
     }
     post {
         success {
-            echo 'Pipeline executed successfully. PR approved.'
+            echo 'Pipeline ejecutado con éxito. PR aprobado.'
         }
         failure {
-            echo 'Pipeline failed. Check SQL quality errors.'
+            echo 'El pipeline falló. Revisa los errores de calidad del código SQL.'
         }
     }
 }
