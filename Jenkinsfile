@@ -23,7 +23,7 @@ pipeline {
         stage('SQLFluff Analysis') {
             steps {
                 script {
-                    def lintResult = sh(script: 'sqlfluff lint **/*.sql --dialect tu_dialecto_sql --rules L001,L002,L003,L004', returnStatus: true)
+                    def lintResult = sh(script: 'sqlfluff lint **/*.sql --dialect mysql --rules L001,L002,L003,L004', returnStatus: true)
                     if (lintResult != 0) {
                         withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
                             sh """
