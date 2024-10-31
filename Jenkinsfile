@@ -3,10 +3,19 @@ pipeline {
     stages {
         stage('Checkout PR') {
             steps {
-                checkout([$class: 'GitSCM',
-                          branches: [[name: env.CHANGE_BRANCH]],
-                          userRemoteConfigs: [[url: env.CHANGE_URL, credentialsId: 'github-credentials-id']]
-                ])
+                script {
+                    def scmUrl = env.CHANGE_URL ?: env.GIT_URL
+                    def scmBranch = env.CHANGE_BRANCH ?: env.BRANCH_NAME
+
+                    if (scmUrl == null || scmBranch == null) {
+                        error "No se pudo obtener la URL o rama para el checkout. Asegúrate de que el pipeline se ejecute en un contexto de PR."
+                    }
+
+                    checkout([$class: 'GitSCM',
+                              branches: [[name: scmBranch]],
+                              userRemoteConfigs: [[url: scmUrl, credentialsId: 'github-credentials-id']]
+                    ])
+                }
             }
         }
         stage('SQLFluff Analysis') {
@@ -18,7 +27,7 @@ pipeline {
                             sh """
                             curl -X PATCH -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" \
                             -d '{"state": "closed"}' \
-                            ${env.CHANGE_URL}/pulls/${env.CHANGE_ID}
+                            ${scmUrl}/pulls/${env.CHANGE_ID}
                             """
                         }
                         error "La validación de calidad no pasó. PR cerrado."
@@ -33,7 +42,7 @@ pipeline {
                         sh """
                         curl -X POST -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" \
                         -d '{"event": "APPROVE"}' \
-                        ${env.CHANGE_URL}/pulls/${env.CHANGE_ID}/reviews
+                        ${scmUrl}/pulls/${env.CHANGE_ID}/reviews
                         """
                     }
                 }
