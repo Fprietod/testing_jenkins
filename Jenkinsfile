@@ -1,14 +1,10 @@
 pipeline {
     agent any
-    environment {
-        CHANGE_URL = env.CHANGE_URL  // URL dinámica del fork
-        CHANGE_BRANCH = env.CHANGE_BRANCH  // Rama dinámica del fork
-    }
     stages {
         stage('Checkout PR') {
             steps {
                 checkout([$class: 'GitSCM',
-                          branches: [[name: env.CHANGE_BRANCH]],
+                          branches: [[name: env.CHANGE_BRANCH]],  // Usa env.CHANGE_BRANCH directamente
                           userRemoteConfigs: [[url: env.CHANGE_URL, credentialsId: 'github-credentials-id']]
                 ])
             }
