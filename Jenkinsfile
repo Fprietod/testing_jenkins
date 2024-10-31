@@ -1,19 +1,20 @@
 pipeline {
     agent any
     environment {
-        SCM_URL = "https://github.com/Fprietod/testing_jenkins.git"  // URL base del repositorio
-        SCM_BRANCH = "${env.CHANGE_BRANCH ?: env.BRANCH_NAME}"
+        SCM_URL = "https://github.com/Fprietod/testing_jenkins.git"
     }
     stages {
         stage('Checkout PR') {
             steps {
                 script {
-                    if (SCM_BRANCH == null) {
-                        error "No se pudo obtener la rama para el checkout. Asegúrate de que el pipeline se ejecute en un contexto de PR."
+                    def branchToBuild = env.CHANGE_ID ? "refs/pull/${env.CHANGE_ID}/head" : env.BRANCH_NAME
+                    
+                    if (branchToBuild == null) {
+                        error "No se pudo determinar la rama para el checkout. Verifica que el pipeline esté en el contexto correcto."
                     }
 
                     checkout([$class: 'GitSCM',
-                              branches: [[name: "refs/pull/${env.CHANGE_ID}/head"]],
+                              branches: [[name: branchToBuild]],
                               userRemoteConfigs: [[url: SCM_URL, credentialsId: 'github-credentials-id']]
                     ])
                 }
