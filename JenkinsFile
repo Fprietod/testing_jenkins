@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        ORIGINAL_REPO_URL = 'https://github.com/Fprietod/testing_jenkins.git'
+        ORIGINAL_REPO_URL = 'https://github.com/F.Prieto/testing_jenkins.git'
     }
     stages {
         stage('Checkout PR') {
