@@ -4,7 +4,7 @@ pipeline {
         stage('Checkout PR') {
             steps {
                 checkout([$class: 'GitSCM',
-                          branches: [[name: env.CHANGE_BRANCH]],  // Usa env.CHANGE_BRANCH directamente
+                          branches: [[name: env.CHANGE_BRANCH]],
                           userRemoteConfigs: [[url: env.CHANGE_URL, credentialsId: 'github-credentials-id']]
                 ])
             }
