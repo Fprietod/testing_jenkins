@@ -1,19 +1,21 @@
 pipeline {
     agent any
+    environment {
+        // Definimos las variables scmUrl y scmBranch globalmente
+        SCM_URL = "${env.CHANGE_URL ?: env.GIT_URL}"
+        SCM_BRANCH = "${env.CHANGE_BRANCH ?: env.BRANCH_NAME}"
+    }
     stages {
         stage('Checkout PR') {
             steps {
                 script {
-                    def scmUrl = env.CHANGE_URL ?: env.GIT_URL
-                    def scmBranch = env.CHANGE_BRANCH ?: env.BRANCH_NAME
-
-                    if (scmUrl == null || scmBranch == null) {
+                    if (SCM_URL == null || SCM_BRANCH == null) {
                         error "No se pudo obtener la URL o rama para el checkout. Asegúrate de que el pipeline se ejecute en un contexto de PR."
                     }
 
                     checkout([$class: 'GitSCM',
-                              branches: [[name: scmBranch]],
-                              userRemoteConfigs: [[url: scmUrl, credentialsId: 'github-credentials-id']]
+                              branches: [[name: SCM_BRANCH]],
+                              userRemoteConfigs: [[url: SCM_URL, credentialsId: 'github-credentials-id']]
                     ])
                 }
             }
@@ -27,7 +29,7 @@ pipeline {
                             sh """
                             curl -X PATCH -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" \
                             -d '{"state": "closed"}' \
-                            ${scmUrl}/pulls/${env.CHANGE_ID}
+                            ${SCM_URL}/pulls/${env.CHANGE_ID}
                             """
                         }
                         error "La validación de calidad no pasó. PR cerrado."
@@ -42,7 +44,7 @@ pipeline {
                         sh """
                         curl -X POST -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" \
                         -d '{"event": "APPROVE"}' \
-                        ${scmUrl}/pulls/${env.CHANGE_ID}/reviews
+                        ${SCM_URL}/pulls/${env.CHANGE_ID}/reviews
                         """
                     }
                 }
